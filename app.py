@@ -39,7 +39,14 @@ def get_gemini_response(prompt, api_key):
 
 # --- Sidebar UI ---
 st.sidebar.title("Configuration")
-api_key = st.sidebar.text_input("Enter Google Gemini API Key", type="password")
+
+# Check if API Key is in secrets
+if "GEMINI_API_KEY" in st.secrets:
+    api_key = st.secrets["GEMINI_API_KEY"]
+    st.sidebar.success("API Key loaded from Secrets ✅")
+else:
+    api_key = st.sidebar.text_input("Enter Google Gemini API Key", type="password")
+
 uploaded_file = st.sidebar.file_uploader("Upload CSV or Excel", type=["csv", "xlsx"])
 
 if uploaded_file and st.session_state.df is None:
