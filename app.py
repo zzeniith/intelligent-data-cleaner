@@ -32,15 +32,15 @@ def get_gemini_response(prompt, api_key):
     try:
         genai.configure(api_key=api_key)
         
-        # Try best free model first
+        # Try Gemini 2.5 Flash (fastest, most cost-effective)
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
             if "404" in str(e):
-                # Fallback to 1.5 Pro
-                model = genai.GenerativeModel('gemini-1.5-pro-latest')
+                # Fallback to 2.5 Pro
+                model = genai.GenerativeModel('gemini-2.5-pro')
                 response = model.generate_content(prompt)
                 return response.text
             else:
