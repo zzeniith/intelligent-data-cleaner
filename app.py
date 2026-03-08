@@ -34,13 +34,13 @@ def get_gemini_response(prompt, api_key):
         
         # Try best free model first
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
             if "404" in str(e):
                 # Fallback to 1.5 Pro
-                model = genai.GenerativeModel('gemini-1.5-pro')
+                model = genai.GenerativeModel('gemini-1.5-pro-latest')
                 response = model.generate_content(prompt)
                 return response.text
             else:
