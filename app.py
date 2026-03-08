@@ -35,7 +35,7 @@ def get_gemini_response(prompt, api_key):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"Error: {e}"
+        return e  # Return the actual Exception object
 
 # --- Sidebar UI ---
 st.sidebar.title("Configuration")
@@ -48,6 +48,7 @@ else:
     api_key = st.sidebar.text_input("Enter Google Gemini API Key", type="password")
 
 uploaded_file = st.sidebar.file_uploader("Upload CSV or Excel", type=["csv", "xlsx"])
+
 
 if uploaded_file and st.session_state.df is None:
     try:
@@ -118,16 +119,28 @@ if st.session_state.df is not None:
                 
                 List: {unique_vals}
                 
-                Return format: JSON only. No markdown.
+                Return format: JSON only. No markdown. No explanations.
+                Example output: {{"N. York": "New York", "NYC": "New York"}}
                 """
                 
                 with st.spinner("AI is analyzing semantic similarities..."):
                     response = get_gemini_response(prompt, api_key)
                     
+                    if isinstance(response, Exception):
+                        st.error(f"API Error: {response}")
+                        st.stop()
+                    
                     try:
-                        # Attempt to parse JSON from response (handling potential markdown wrapper)
-                        cleaned_response = response.replace("```json", "").replace("```", "").strip()
-                        mapping = json.loads(cleaned_response)
+                        # Improved JSON extraction
+                        import re
+                        match = re.search(r"\{.*\}", response, re.DOTALL)
+
+                        if match:
+                            json_str = match.group(0)
+                            mapping = json.loads(json_str)
+                        else:
+                            # Fallback if no braces found (unlikely but possible)
+                            mapping = json.loads(response)
                         
                         if mapping:
                             st.write("Proposed Changes:")
@@ -141,8 +154,9 @@ if st.session_state.df is not None:
                         else:
                             st.info("AI found no necessary changes.")
                     except json.JSONDecodeError:
-                        st.error("Failed to parse AI response. Try again.")
+                        st.error("Failed to parse AI response. The AI might have returned invalid JSON.")
                         st.expander("Raw Response").write(response)
+
 
     # --- Tab 3: AI Assistant (Natural Language to Code) ---
     with tab3:
@@ -180,8 +194,14 @@ if st.session_state.df is not None:
                 
                 with st.spinner("Generating code..."):
                     generated_code = get_gemini_response(prompt, api_key)
+                    
+                    if isinstance(generated_code, Exception):
+                        st.error(f"API Error: {generated_code}")
+                        st.stop()
+                        
                     # Clean potential markdown
                     generated_code = generated_code.replace("```python", "").replace("```", "").strip()
+
                     
                     st.code(generated_code, language='python')
                     
