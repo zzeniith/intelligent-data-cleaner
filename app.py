@@ -28,14 +28,26 @@ def undo_last_action():
 
 # --- AI Helper Functions ---
 def get_gemini_response(prompt, api_key):
-    """Interacts with the Gemini API."""
+    """Interacts with the Gemini API with automatic model fallback."""
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
-        return response.text
+        
+        # Try best free model first
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            if "404" in str(e):
+                # Fallback to 1.5 Pro
+                model = genai.GenerativeModel('gemini-1.5-pro')
+                response = model.generate_content(prompt)
+                return response.text
+            else:
+                raise e
     except Exception as e:
-        return e  # Return the actual Exception object
+        return e  # Return the actual Exception object if all models fail
+
 
 # --- Sidebar UI ---
 st.sidebar.title("Configuration")
