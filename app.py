@@ -34,7 +34,19 @@ def get_gemini_response(prompt, api_key):
 
     # List of models to try, in order of preference
 
-    available_models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+    # Newer, more capable free models first
+
+    available_models_to_try = [
+
+        'gemini-1.5-flash', 
+
+        'gemini-1.5-pro', 
+
+        'gemini-2.5-flash-lite', # Added this model as requested
+
+        'gemini-pro' 
+
+    ]
 
     
 
@@ -48,13 +60,13 @@ def get_gemini_response(prompt, api_key):
 
             try:
 
-                print(f"Attempting to use model: {model_name}") # Debugging print
+                # print(f"Attempting to use model: {model_name}") # Debugging print
 
                 model = genai.GenerativeModel(model_name)
 
                 response = model.generate_content(prompt)
 
-                print(f"Successfully used model: {model_name}") # Debugging print
+                # print(f"Successfully used model: {model_name}") # Debugging print
 
                 return response.text
 
@@ -62,21 +74,23 @@ def get_gemini_response(prompt, api_key):
 
                 error_message = str(e)
 
-                print(f"Error with model {model_name}: {error_message}") # Debugging print
+                # print(f"Error with model {model_name}: {error_message}") # Debugging print
 
                 
 
-                # Check for 404 or similar "model not found" errors
+                # Check for "model not found" or "404" type errors
 
-                if "404" in error_message or "not found" in error_message or "is not supported" in error_message:
+                if "404" in error_message or "not found" in error_message or "is not supported" in error_message or "Model_Not_Found" in error_message:
 
-                    print(f"Model {model_name} failed, trying next...")
+                    # print(f"Model {model_name} failed, trying next...") # Debugging print
 
                     continue # Move to the next model in the list
 
                 else:
 
-                    # If it's a different error (e.g., API key issue, quota), raise it immediately
+                    # If it's a different error (e.g., API key issue, quota, network), raise it immediately
+
+                    print(f"Encountered non-404 error with model {model_name}: {e}") # Debugging print
 
                     raise e 
 
@@ -84,15 +98,15 @@ def get_gemini_response(prompt, api_key):
 
         # If the loop finishes without returning, all models failed with a 404/not found error
 
-        return Exception("All tried Gemini models ('gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro') failed. Please check your API key, quota, and model availability.")
+        return Exception("All tried Gemini models failed. Please check your API key, quota, and model availability. The models tried were: {', '.join(available_models_to_try)}.")
 
 
 
     except Exception as e:
 
-        # Catch any error during genai.configure or initial setup (e.g., invalid API key format)
+        # Catch any error during genai.configure or initial setup (e.g., invalid API key format, network issues)
 
-        print(f"General API configuration error: {e}") # Debugging print
+        # print(f"General API configuration error: {e}") # Debugging print
 
         return e
 
