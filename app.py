@@ -304,17 +304,18 @@ if st.session_state.df is not None:
                         st.subheader("Preview of Changes:")
                         st.dataframe(st.session_state.df.head()) # Display preview here
                         st.write("Switch to the 'Overview' tab to see full data stats and export.")
-                        # Moved rerun to the end of the block
-                        # st.rerun() 
+                        
+                        # Rerun to refresh the entire app and show changes everywhere
+                        st.rerun() 
 
                     except Exception as e:
                         st.error(f"Error executing code: {e}")
                         undo_last_action() # Revert if error
-                
-                # Rerun is now placed outside the try-except, but within the button's block
-                # This ensures all elements (success/error, preview, code) are rendered
-                # before the script restarts.
-                st.rerun()
+                        # Rerun even on error to show the error state and updated UI
+                        st.rerun() 
+
+            # Removed the outer rerun that was here
+            # st.rerun()
 
     # --- Tab 4: Export ---
     with tab4:
