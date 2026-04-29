@@ -27,39 +27,100 @@ def undo_last_action():
         st.warning("No history to undo.")
 
 # --- AI Helper Functions ---
+
 def get_gemini_response(prompt, api_key):
-    """Interacts with the Gemini API with automatic model fallback."""
+
+    """Interacts with the Gemini API with robust model fallback."""
+
+    # List of models to try, in order of preference
+
+    available_models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+
+    
+
     try:
+
         genai.configure(api_key=api_key)
+
         
-        # Try Gemini 2.5 Flash (fastest, most cost-effective)
-        try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            response = model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            if "404" in str(e):
-                # Fallback to 2.5 Pro
-                model = genai.GenerativeModel('gemini-2.5-pro')
+
+        for model_name in available_models_to_try:
+
+            try:
+
+                print(f"Attempting to use model: {model_name}") # Debugging print
+
+                model = genai.GenerativeModel(model_name)
+
                 response = model.generate_content(prompt)
+
+                print(f"Successfully used model: {model_name}") # Debugging print
+
                 return response.text
-            else:
-                raise e
+
+            except Exception as e:
+
+                error_message = str(e)
+
+                print(f"Error with model {model_name}: {error_message}") # Debugging print
+
+                
+
+                # Check for 404 or similar "model not found" errors
+
+                if "404" in error_message or "not found" in error_message or "is not supported" in error_message:
+
+                    print(f"Model {model_name} failed, trying next...")
+
+                    continue # Move to the next model in the list
+
+                else:
+
+                    # If it's a different error (e.g., API key issue, quota), raise it immediately
+
+                    raise e 
+
+        
+
+        # If the loop finishes without returning, all models failed with a 404/not found error
+
+        return Exception("All tried Gemini models ('gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro') failed. Please check your API key, quota, and model availability.")
+
+
+
     except Exception as e:
-        return e  # Return the actual Exception object if all models fail
+
+        # Catch any error during genai.configure or initial setup (e.g., invalid API key format)
+
+        print(f"General API configuration error: {e}") # Debugging print
+
+        return e
+
 
 
 # --- Sidebar UI ---
+
 st.sidebar.title("Configuration")
 
+
+
 # Check if API Key is in secrets
+
 if "GEMINI_API_KEY" in st.secrets:
+
     api_key = st.secrets["GEMINI_API_KEY"]
+
     st.sidebar.success("API Key loaded from Secrets ✅")
+
 else:
+
     api_key = st.sidebar.text_input("Enter Google Gemini API Key", type="password")
 
+
+
 uploaded_file = st.sidebar.file_uploader("Upload CSV or Excel", type=["csv", "xlsx"])
+
+
 
 
 if uploaded_file and st.session_state.df is None:
